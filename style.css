@@ -1,5 +1,6 @@
 /* ==========================================================================
-   DJ ANTLER — Advanced Cyberpunk & Club Dynamic Animation System
+   DJ ANTLER — High Performance Cyberpunk & Club Dynamic Animation System
+   Optimized for Silky-Smooth 60fps / 120fps Mobile & Desktop Scrolling
    ========================================================================== */
 
 :root {
@@ -12,7 +13,36 @@
 }
 
 /* --------------------------------------------------------------------------
-   1. Chrome & Metallic Typography
+   1. Base & Viewport Smooth Scrolling Configuration
+   -------------------------------------------------------------------------- */
+html {
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+  max-width: 100vw;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #050608;
+}
+
+/* Layout containment for blazing-fast scroll performance */
+section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 650px;
+}
+
+#hero {
+  content-visibility: visible;
+}
+
+/* --------------------------------------------------------------------------
+   2. Chrome & Metallic Typography
    -------------------------------------------------------------------------- */
 .chrome-title, .chrome-text {
   background: linear-gradient(
@@ -27,8 +57,8 @@
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 10px rgba(255, 255, 255, 0.2));
-  background-size: 200% 200%;
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.15));
+  background-size: 100% 100%;
 }
 
 .text-glow-red {
@@ -40,26 +70,22 @@
 }
 
 /* --------------------------------------------------------------------------
-   2. Preloader Animation Styles
+   3. Preloader Animation Styles
    -------------------------------------------------------------------------- */
 #preloader {
-  transition: opacity 0.7s var(--ease-smooth), visibility 0.7s var(--ease-smooth), transform 0.7s var(--ease-spring);
+  transition: opacity 0.5s var(--ease-smooth), visibility 0.5s var(--ease-smooth), transform 0.5s var(--ease-spring);
 }
 
 #preloader.loaded {
   opacity: 0;
   visibility: hidden;
-  transform: scale(1.05);
+  transform: scale(1.03);
   pointer-events: none;
 }
 
 @keyframes laserSweep {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .laser-text-sweep {
@@ -78,16 +104,13 @@
 }
 
 @keyframes eqBounce {
-  0%, 100% {
-    height: 6px;
-  }
-  50% {
-    height: 28px;
-  }
+  0%, 100% { height: 6px; }
+  50% { height: 26px; }
 }
 
 .eq-bar {
   animation: eqBounce 1.2s infinite ease-in-out;
+  transform: translateZ(0);
 }
 .eq-bar:nth-child(1) { animation-delay: 0.0s; }
 .eq-bar:nth-child(2) { animation-delay: 0.2s; }
@@ -96,7 +119,7 @@
 .eq-bar:nth-child(5) { animation-delay: 0.3s; }
 
 /* --------------------------------------------------------------------------
-   3. Scroll Progress Indicator Bar
+   4. Scroll Progress Indicator Bar
    -------------------------------------------------------------------------- */
 #scroll-progress {
   position: fixed;
@@ -105,128 +128,109 @@
   height: 3px;
   width: 0%;
   background: linear-gradient(90deg, #ff1e56, #9d4edd, #00f2fe, #ff1e56);
-  background-size: 300% 100%;
+  background-size: 200% 100%;
   z-index: 9999;
-  transition: width 0.1s linear;
-  box-shadow: 0 0 10px rgba(255, 30, 86, 0.8), 0 0 20px rgba(0, 242, 254, 0.6);
-  animation: laserSweep 4s linear infinite;
+  transform: translateZ(0);
+  pointer-events: none;
 }
 
 /* --------------------------------------------------------------------------
-   4. Scroll-Driven Reveal Animations (Intersection Observer)
+   5. Hardware-Accelerated Reveal Animations (Intersection Observer)
    -------------------------------------------------------------------------- */
 .reveal-init {
   opacity: 0;
-  will-change: opacity, transform, filter;
-  transition: opacity 0.8s var(--ease-spring), transform 0.8s var(--ease-spring), filter 0.8s var(--ease-spring);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translate3d(0, 20px, 0);
+  backface-visibility: hidden;
 }
 
 .reveal-up {
-  transform: translateY(40px);
+  transform: translate3d(0, 25px, 0);
 }
 
 .reveal-down {
-  transform: translateY(-40px);
+  transform: translate3d(0, -25px, 0);
 }
 
 .reveal-left {
-  transform: translateX(-45px);
+  transform: translate3d(-25px, 0, 0);
 }
 
 .reveal-right {
-  transform: translateX(45px);
+  transform: translate3d(25px, 0, 0);
 }
 
 .reveal-zoom {
-  transform: scale(0.92);
-}
-
-.reveal-blur {
-  filter: blur(8px);
+  transform: scale3d(0.95, 0.95, 1);
 }
 
 /* Active revealed state */
 .reveal-init.reveal-active {
   opacity: 1 !important;
-  transform: translate(0, 0) scale(1) !important;
-  filter: blur(0px) !important;
+  transform: translate3d(0, 0, 0) scale3d(1, 1, 1) !important;
 }
 
 /* Stagger delays for grid items and card children */
-.stagger-1 { transition-delay: 0.08s; }
-.stagger-2 { transition-delay: 0.16s; }
-.stagger-3 { transition-delay: 0.24s; }
-.stagger-4 { transition-delay: 0.32s; }
-.stagger-5 { transition-delay: 0.40s; }
-.stagger-6 { transition-delay: 0.48s; }
-.stagger-7 { transition-delay: 0.56s; }
-.stagger-8 { transition-delay: 0.64s; }
+.stagger-1 { transition-delay: 0.05s; }
+.stagger-2 { transition-delay: 0.10s; }
+.stagger-3 { transition-delay: 0.15s; }
+.stagger-4 { transition-delay: 0.20s; }
+.stagger-5 { transition-delay: 0.25s; }
+.stagger-6 { transition-delay: 0.30s; }
+.stagger-7 { transition-delay: 0.35s; }
+.stagger-8 { transition-delay: 0.40s; }
 
 /* --------------------------------------------------------------------------
-   5. Glassmorphism & Ambient Glow Cards
+   6. Glassmorphism & Ambient Glow Cards
    -------------------------------------------------------------------------- */
 .glass-card {
-  background: rgba(12, 14, 20, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring), border-color 0.4s ease;
+  background: rgba(12, 14, 20, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-spring), border-color 0.3s ease;
+  transform: translateZ(0);
 }
 
 .glass-card:hover {
   border-color: rgba(255, 30, 86, 0.35);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 30, 86, 0.12);
+  box-shadow: 0 16px 35px -10px rgba(0, 0, 0, 0.8), 0 0 25px rgba(255, 30, 86, 0.12);
 }
 
 /* Ambient laser glows */
 .ambient-glow {
   position: absolute;
   border-radius: 50%;
-  filter: blur(120px);
+  filter: blur(80px);
   pointer-events: none;
-  animation: pulseGlow 8s infinite alternate ease-in-out;
-}
-
-@keyframes pulseGlow {
-  0% {
-    transform: scale(0.95) translate(0, 0);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.1) translate(15px, -15px);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(1) translate(-10px, 10px);
-    opacity: 0.7;
-  }
+  transform: translateZ(0);
 }
 
 .glow-1 {
-  width: 500px;
-  height: 500px;
-  background: rgba(255, 30, 86, 0.12);
-  top: -100px;
-  left: -100px;
+  width: 450px;
+  height: 450px;
+  background: rgba(255, 30, 86, 0.10);
+  top: -80px;
+  left: -80px;
 }
 
 .glow-2 {
-  width: 600px;
-  height: 600px;
-  background: rgba(0, 242, 254, 0.08);
+  width: 500px;
+  height: 500px;
+  background: rgba(0, 242, 254, 0.07);
   top: 40%;
-  right: -150px;
+  right: -100px;
 }
 
 .glow-3 {
-  width: 450px;
-  height: 450px;
-  background: rgba(157, 78, 221, 0.08);
+  width: 400px;
+  height: 400px;
+  background: rgba(157, 78, 221, 0.07);
   bottom: 10%;
-  left: 10%;
+  left: 5%;
 }
 
 /* --------------------------------------------------------------------------
-   6. Micro-Interactions & Hover Effects
+   7. Micro-Interactions & Hover Effects
    -------------------------------------------------------------------------- */
 .laser-grid {
   position: absolute;
@@ -237,39 +241,43 @@
     linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
   -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+  pointer-events: none;
 }
 
 .btn-glow {
   position: relative;
-  transition: all 0.3s var(--ease-spring);
+  transition: all 0.25s var(--ease-spring);
+  transform: translateZ(0);
 }
 
 .btn-glow:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 0 30px rgba(255, 30, 86, 0.6), 0 0 60px rgba(255, 30, 86, 0.25);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 25px rgba(255, 30, 86, 0.5), 0 0 50px rgba(255, 30, 86, 0.2);
 }
 
 .genre-card {
-  transition: all 0.35s var(--ease-spring);
+  transition: all 0.3s var(--ease-spring);
+  transform: translateZ(0);
 }
 
 .genre-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 30, 86, 0.2);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 35px -8px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 30, 86, 0.18);
 }
 
 /* Soundpad Active Visuals */
 .sound-pad {
   user-select: none;
   touch-action: manipulation;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
+  transform: translateZ(0);
 }
 
 .sound-pad:active, .sound-pad.pad-active {
   background: rgba(255, 30, 86, 0.3) !important;
   border-color: #ff1e56 !important;
-  transform: scale(0.94);
-  box-shadow: 0 0 25px rgba(255, 30, 86, 0.5);
+  transform: scale(0.95);
+  box-shadow: 0 0 20px rgba(255, 30, 86, 0.45);
 }
 
 .genre-preset-btn.active {
@@ -281,36 +289,33 @@
 
 /* Floating status pill animation */
 @keyframes floatGentle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 .animate-float {
   animation: floatGentle 4s ease-in-out infinite;
+  transform: translateZ(0);
 }
 
 /* --------------------------------------------------------------------------
-   7. Back to Top Floating Button
+   8. Back to Top Floating Button
    -------------------------------------------------------------------------- */
 #back-to-top {
   opacity: 0;
   visibility: hidden;
-  transform: translateY(20px) scale(0.9);
-  transition: opacity 0.3s var(--ease-spring), visibility 0.3s var(--ease-spring), transform 0.3s var(--ease-spring);
+  transform: translate3d(0, 15px, 0);
+  transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.25s var(--ease-spring);
 }
 
 #back-to-top.visible {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0) scale(1);
+  transform: translate3d(0, 0, 0);
 }
 
 /* --------------------------------------------------------------------------
-   8. Custom Scrollbar
+   9. Custom Scrollbar
    -------------------------------------------------------------------------- */
 ::-webkit-scrollbar {
   width: 6px;
@@ -331,24 +336,8 @@
 }
 
 /* --------------------------------------------------------------------------
-   9. Mobile & Tablet Responsiveness Enhancements
+   10. Mobile & Tablet Responsiveness Enhancements
    -------------------------------------------------------------------------- */
-html {
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-  overflow-x: hidden !important;
-  max-width: 100vw;
-}
-
-body {
-  overflow-x: hidden !important;
-  width: 100%;
-  max-width: 100vw;
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Ensure images and videos never overflow container on mobile */
 img, video, iframe, canvas {
   max-width: 100%;
   height: auto;
@@ -361,8 +350,8 @@ img, video, iframe, canvas {
 
 /* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
-  -ms-overflow-style: none !important;  /* IE and Edge */
-  scrollbar-width: none !important;  /* Firefox */
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 /* Smooth Horizontal Snap Scroll on Mobile */
@@ -373,16 +362,17 @@ img, video, iframe, canvas {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-x pan-y;
+  overscroll-behavior-x: contain;
   width: 100%;
   max-width: 100%;
 }
 
 .mobile-swipe-card {
-  flex: 0 0 78vw;
+  flex: 0 0 80vw;
   max-width: 290px;
   min-width: 0;
   scroll-snap-align: center;
-  scroll-snap-stop: always;
+  scroll-snap-stop: normal;
 }
 
 @media (min-width: 640px) {
@@ -399,37 +389,20 @@ img, video, iframe, canvas {
   }
 }
 
-/* Fix mobile touch targets and padding */
-@media (max-width: 640px) {
-  .chrome-title {
-    background-size: 150% 150%;
+/* Mobile Specific GPU & Scrolling Optimizations */
+@media (max-width: 768px) {
+  .glass-card {
+    background: rgba(12, 14, 20, 0.94);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
-  /* Prevent oversized reveal transforms on mobile */
-  .reveal-left {
-    transform: translateX(-15px);
+  .ambient-glow {
+    filter: blur(40px);
+    opacity: 0.35;
   }
 
-  .reveal-right {
-    transform: translateX(15px);
-  }
-
-  .reveal-up {
-    transform: translateY(20px);
-  }
-
-  .reveal-down {
-    transform: translateY(-20px);
-  }
-
-  /* Ambient glow shrink on mobile to prevent GPU lag */
-  .glow-1, .glow-2, .glow-3 {
-    width: 260px;
-    height: 260px;
-    filter: blur(70px);
-    opacity: 0.4;
+  .reveal-left, .reveal-right, .reveal-up, .reveal-down {
+    transform: translate3d(0, 15px, 0);
   }
 }
-
-
-

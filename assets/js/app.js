@@ -348,15 +348,25 @@ function startCanvasVisualizer() {
   const bufferLength = analyser ? analyser.frequencyBinCount : 32;
   const dataArray = new Uint8Array(bufferLength);
 
-  function draw() {
+  let lastVisualizerDraw = 0;
+  function draw(timestamp) {
     visualizerAnimationId = requestAnimationFrame(draw);
+
+    if (document.hidden) return;
+
+    // Throttle idle animation to save battery and GPU cycles
+    if (!isPlaying && timestamp - lastVisualizerDraw < 50) {
+      return;
+    }
+    lastVisualizerDraw = timestamp;
 
     if (analyser && isPlaying) {
       analyser.getByteFrequencyData(dataArray);
     } else {
       // Idle wave animation
+      const time = timestamp * 0.002;
       for (let i = 0; i < bufferLength; i++) {
-        dataArray[i] = Math.max(10, Math.sin(Date.now() * 0.003 + i * 0.2) * 40 + 30);
+        dataArray[i] = Math.max(8, Math.sin(time + i * 0.25) * 35 + 25);
       }
     }
 
@@ -384,41 +394,61 @@ function startCanvasVisualizer() {
     }
   }
 
-  draw();
+  requestAnimationFrame(draw);
 }
 
 /**
- * Floating Dust Background Canvas
+ * Floating Dust Background Canvas (Optimized & Throttled)
  */
 function initBackgroundParticles() {
   const canvas = document.getElementById('bg-particles');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
 
+  // Disable background canvas completely on low-end/mobile screens to guarantee 120fps touch scrolling
+  if (window.innerWidth < 768) {
+    canvas.style.display = 'none';
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
   let width = (canvas.width = window.innerWidth);
   let height = (canvas.height = window.innerHeight);
 
   window.addEventListener('resize', () => {
+    if (window.innerWidth < 768) {
+      canvas.style.display = 'none';
+      return;
+    } else {
+      canvas.style.display = 'block';
+    }
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-  });
+  }, { passive: true });
 
   const particles = [];
-  const count = 40;
+  const count = 22; // Reduced particle count for maximum lightness
 
   for (let i = 0; i < count; i++) {
     particles.push({
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: (Math.random() - 0.5) * 0.5,
-      radius: Math.random() * 2 + 1,
-      alpha: Math.random() * 0.5 + 0.1,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      radius: Math.random() * 1.8 + 1,
+      alpha: Math.random() * 0.35 + 0.1,
       color: Math.random() > 0.5 ? '#ff1e56' : '#00f2fe'
     });
   }
 
-  function render() {
+  let lastParticleDraw = 0;
+  function render(timestamp) {
+    requestAnimationFrame(render);
+    if (document.hidden || canvas.style.display === 'none') return;
+
+    // 30fps is more than enough for ambient dust particles
+    if (timestamp - lastParticleDraw < 32) return;
+    lastParticleDraw = timestamp;
+
     ctx.clearRect(0, 0, width, height);
 
     particles.forEach(p => {
@@ -436,11 +466,9 @@ function initBackgroundParticles() {
       ctx.globalAlpha = p.alpha;
       ctx.fill();
     });
-
-    requestAnimationFrame(render);
   }
 
-  render();
+  requestAnimationFrame(render);
 }
 
 /**
@@ -628,37 +656,68 @@ Mohon info ketersediaan jadwal & rate card. Terima kasih!`;
     });
   }
 
-  // 9. Navbar Scroll Background Opacity & Scroll Progress Bar
+  // 9. Navbar Scroll Background Opacity & Scroll Progress Bar with RAF Throttling
   const nav = document.getElementById('main-nav');
   const scrollProgressBar = document.getElementById('scroll-progress');
   const backToTopBtn = document.getElementById('back-to-top');
 
+  let ticking = false;
+  let cachedDocHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+
+  window.addEventListener('resize', () => {
+    cachedDocHeight = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+  }, { passive: true });
+
   window.addEventListener('scroll', () => {
-    const scrollY = window.scrollY;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const scrollPercent = docHeight > 0 ? (scrollY / docHeight) * 100 : 0;
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const scrollY = window.scrollY;
+        const scrollPercent = (scrollY / cachedDocHeight) * 100;
 
-    if (scrollProgressBar) {
-      scrollProgressBar.style.width = `${scrollPercent}%`;
+        if (scrollProgressBar) {
+          scrollProgressBar.style.width = `${Math.min(100, Math.max(0, scrollPercent))}%`;
+        }
+
+        if (nav) {
+          if (scrollY > 40) {
+            nav.classList.add('bg-[#050608]/95', 'shadow-2xl', 'shadow-black/60');
+            nav.classList.remove('bg-[#050608]/80');
+          } else {
+            nav.classList.remove('bg-[#050608]/95', 'shadow-2xl', 'shadow-black/60');
+            nav.classList.add('bg-[#050608]/80');
+          }
+        }
+
+        if (backToTopBtn) {
+          if (scrollY > 350) {
+            backToTopBtn.classList.add('visible');
+          } else {
+            backToTopBtn.classList.remove('visible');
+          }
+        }
+        ticking = false;
+      });
+      ticking = true;
     }
+  }, { passive: true });
 
-    if (nav) {
-      if (scrollY > 50) {
-        nav.classList.add('bg-[#050608]/95', 'shadow-2xl', 'shadow-black/60');
-        nav.classList.remove('bg-[#050608]/80');
-      } else {
-        nav.classList.remove('bg-[#050608]/95', 'shadow-2xl', 'shadow-black/60');
-        nav.classList.add('bg-[#050608]/80');
+  // Smooth JS-driven anchor scrolling with header offset
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const targetId = this.getAttribute('href');
+      if (targetId === '#' || !targetId) return;
+      const targetEl = document.querySelector(targetId);
+      if (targetEl) {
+        e.preventDefault();
+        const headerOffset = 70;
+        const elementPosition = targetEl.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
       }
-    }
-
-    if (backToTopBtn) {
-      if (scrollY > 400) {
-        backToTopBtn.classList.add('visible');
-      } else {
-        backToTopBtn.classList.remove('visible');
-      }
-    }
+    });
   });
 
   if (backToTopBtn) {
@@ -690,13 +749,12 @@ Mohon info ketersediaan jadwal & rate card. Terima kasih!`;
       });
     }, {
       root: null,
-      threshold: 0.12,
-      rootMargin: '0px 0px -40px 0px'
+      threshold: 0.08,
+      rootMargin: '0px 0px -20px 0px'
     });
 
     revealElements.forEach(el => revealObserver.observe(el));
   } else {
-    // Fallback if IntersectionObserver is not supported
     revealElements.forEach(el => el.classList.add('reveal-active'));
   }
 
@@ -705,13 +763,12 @@ Mohon info ketersediaan jadwal & rate card. Terima kasih!`;
     const target = parseFloat(el.getAttribute('data-target') || '0');
     const prefix = el.getAttribute('data-prefix') || '';
     const suffix = el.getAttribute('data-suffix') || '';
-    const duration = 1600; // ms
+    const duration = 1400; // ms
     const startTime = performance.now();
 
     function updateCount(now) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const easeProgress = 1 - Math.pow(1 - progress, 3);
       const current = Math.floor(easeProgress * target);
 
@@ -734,11 +791,8 @@ Mohon info ketersediaan jadwal & rate card. Terima kasih!`;
 
   if (preloader) {
     let currentPct = 0;
-    const loadStart = performance.now();
-    const minLoadTime = 700; // ms
-
     const timer = setInterval(() => {
-      currentPct += Math.floor(Math.random() * 15) + 8;
+      currentPct += Math.floor(Math.random() * 18) + 10;
       if (currentPct >= 100) {
         currentPct = 100;
         clearInterval(timer);
@@ -748,17 +802,15 @@ Mohon info ketersediaan jadwal & rate card. Terima kasih!`;
 
         setTimeout(() => {
           preloader.classList.add('loaded');
-          // Trigger Hero section reveal right away
           document.querySelectorAll('#hero .reveal-init').forEach(el => el.classList.add('reveal-active'));
-        }, 300);
+        }, 200);
       } else {
         if (preloaderBar) preloaderBar.style.width = `${currentPct}%`;
         if (preloaderCounter) preloaderCounter.textContent = `${currentPct}%`;
       }
-    }, 45);
+    }, 35);
 
     window.addEventListener('load', () => {
-      // Ensure it finishes when page is ready
       currentPct = 95;
     });
   }
