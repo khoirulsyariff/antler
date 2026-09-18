@@ -2,8 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 3000;
-const BASE_DIR = path.join(__dirname, '..');
+const PORT = process.env.PORT || 3000;
+const BASE_DIR = path.resolve(__dirname, '..');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -27,9 +27,11 @@ const server = http.createServer((req, res) => {
   if (safePath === '/' || safePath === '') safePath = '/index.html';
 
   const filePath = path.join(BASE_DIR, safePath);
+  console.log(`[DEV] ${req.method} ${req.url} -> ${filePath}`);
 
   // Prevent directory traversal
   if (!filePath.startsWith(BASE_DIR)) {
+    console.log(`[403 FORBIDDEN] filePath: ${filePath} does not start with BASE_DIR: ${BASE_DIR}`);
     res.writeHead(403, { 'Content-Type': 'text/plain' });
     return res.end('403 Forbidden');
   }
