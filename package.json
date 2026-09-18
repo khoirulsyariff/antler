@@ -1,0 +1,12 @@
+{
+  "name": "dj-antler",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Official DJ ANTLER Portfolio & Booking Website",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "devDependencies": {
+    "vercel": "^59.23.0"
+  }
+}
